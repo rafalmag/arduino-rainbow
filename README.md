@@ -1,1 +1,4 @@
-# ESP32_weather_station
+# Arduino rainbow
+
+Using neopixels sets the rainbow :)
+

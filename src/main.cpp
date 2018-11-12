@@ -26,7 +26,7 @@ void setLeds(int listSize, int r, int g, int b, float perc)
   float r_a1 = r / mid;
   float g_a1 = g / mid;
   float b_a1 = b / mid;
-  for (int i = 0; i < mid; i++)
+  for (int i = 0; i <= mid; i++)
   {
     int r_val = i * r_a1;
     int g_val = i * g_a1;
