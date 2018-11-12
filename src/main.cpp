@@ -18,9 +18,9 @@ void setup()
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
-void setLeds(int listSize, int r, int g, int b)
+void setLeds(int listSize, int r, int g, int b, float perc)
 {
-  float mid = (listSize - 1) / 2.0;
+  float mid = (listSize - 1) * perc;
 
   // left
   float r_a1 = r / mid;
@@ -34,12 +34,12 @@ void setLeds(int listSize, int r, int g, int b)
     pixels.setPixelColor(i, pixels.Color(r_val, g_val, b_val));
   }
   //right
-  float r_a2 = (100 - r) / mid;
-  float g_a2 = (100 - g) / mid;
-  float b_a2 = (100 - b) / mid;
-  int r_b2 = 2 * r - 100;
-  int g_b2 = 2 * g - 100;
-  int b_b2 = 2 * b - 100;
+  float r_a2 = (255 - r) / mid;
+  float g_a2 = (255 - g) / mid;
+  float b_a2 = (255 - b) / mid;
+  int r_b2 = 2 * r - 255;
+  int g_b2 = 2 * g - 255;
+  int b_b2 = 2 * b - 255;
   for (int i = mid + 1; i < listSize; i++)
   {
     int r_val = i * r_a2 + r_b2;
@@ -51,33 +51,12 @@ void setLeds(int listSize, int r, int g, int b)
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-  // digitalWrite(LED_BUILTIN, HIGH);
-  // delay(1000);
-  // digitalWrite(LED_BUILTIN, LOW);
-  // delay(1000);
-
   int r = analogRead(0) / 4;
   int g = analogRead(1) / 4;
   int b = analogRead(2) / 4;
-  int perc = analogRead(3);
+  float perc = analogRead(3) / 1023.0;
 
-  // Serial.print("rgb(");
-  // Serial.print(r);
-  // Serial.print(",");
-  // Serial.print(g);
-  // Serial.print(",");
-  // Serial.print(b);
-  // Serial.print("), proc=");
-  // Serial.print(perc);
-  // Serial.println();
-
-  // for (int i = 0; i < NUMPIXELS; i++)
-  // {
-  //   // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-  //   pixels.setPixelColor(i, pixels.Color(r, g, b));
-  // }
-  setLeds(NUMPIXELS, r, g, b);
+  setLeds(NUMPIXELS, r, g, b, perc);
   pixels.show(); // This sends the updated pixel color to the hardware.
   delay(100);
 }
