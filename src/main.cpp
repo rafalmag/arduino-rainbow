@@ -34,12 +34,12 @@ void setLeds(int listSize, int r, int g, int b, float perc)
     pixels.setPixelColor(i, pixels.Color(r_val, g_val, b_val));
   }
   //right
-  float r_a2 = (255 - r) / mid;
-  float g_a2 = (255 - g) / mid;
-  float b_a2 = (255 - b) / mid;
-  int r_b2 = 2 * r - 255;
-  int g_b2 = 2 * g - 255;
-  int b_b2 = 2 * b - 255;
+  float r_a2 = (254 - r) / mid;
+  float g_a2 = (254 - g) / mid;
+  float b_a2 = (254 - b) / mid;
+  int r_b2 = 2 * r - 254;
+  int g_b2 = 2 * g - 254;
+  int b_b2 = 2 * b - 254;
   for (int i = mid + 1; i < listSize; i++)
   {
     int r_val = i * r_a2 + r_b2;
@@ -55,6 +55,9 @@ void loop()
   int g = analogRead(1) / 4;
   int b = analogRead(2) / 4;
   float perc = analogRead(3) / 1023.0;
+
+  // TODO alternative idea, use 0-255
+  // pixels.setBrightness(perc * 255);
 
   setLeds(NUMPIXELS, r, g, b, perc);
   pixels.show(); // This sends the updated pixel color to the hardware.
