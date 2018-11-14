@@ -70,9 +70,6 @@ void loop()
   // div by 1023 to convert 0-1023 to 0.0-1.0
   float perc = analogRead(3) / 1023.0;
 
-  // TODO alternative idea, use 0-255
-  // pixels.setBrightness(perc * 255);
-
   setLeds(NUMPIXELS, r, g, b, perc);
   pixels.show(); // This sends the updated pixel color to the hardware.
   delay(100);
