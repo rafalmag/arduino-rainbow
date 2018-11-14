@@ -4,7 +4,7 @@
 #define NEOPIXEL_PIN 6
 
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS 30
+#define NUMPIXELS 8
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 int iter = 0;
@@ -19,6 +19,8 @@ void setup()
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
+// r,g,b expected to be in range 0-255
+// perc 0.0-1.0
 void setLeds(int listSize, int r, int g, int b, float perc)
 {
   if (perc < 0.0001)
@@ -43,26 +45,29 @@ void setLeds(int listSize, int r, int g, int b, float perc)
   //right
   float divider = (listSize - 1 - mid);
 
-  int r_b2 = 100 - r;
-  int g_b2 = 100 - g;
-  int b_b2 = 100 - b;
+  int r_b2 = 255 - r;
+  int g_b2 = 255 - g;
+  int b_b2 = 255 - b;
 
   for (int i = mid + 1; i < listSize; i++)
   {
     float i_factor = i - mid;
     int r_val = r_b2 * i_factor / divider + r;
-    int g_val = g_b2 * i_factor / divider + r;
-    int b_val = b_b2 * i_factor / divider + r;
+    int g_val = g_b2 * i_factor / divider + g;
+    int b_val = b_b2 * i_factor / divider + b;
 
+    // vals from range 0-255
     pixels.setPixelColor(i, pixels.Color(r_val, g_val, b_val));
   }
 }
 
 void loop()
 {
-  int r = analogRead(0) * 0.09775;
-  int g = analogRead(1) * 0.09775;
-  int b = analogRead(2) * 0.09775;
+  // div by 4 to convert 0-1023 to 0-255
+  int r = analogRead(0) / 4;
+  int g = analogRead(1) / 4;
+  int b = analogRead(2) / 4;
+  // div by 1023 to convert 0-1023 to 0.0-1.0
   float perc = analogRead(3) / 1023.0;
 
   // TODO alternative idea, use 0-255
@@ -75,23 +80,23 @@ void loop()
   if (iter % 15 == 0)
   {
     iter = 0;
-    for (int i = 0; i < NUMPIXELS; i++)
-    {
-      Serial.print(i);
-      Serial.print(": ");
+    // for (int i = 0; i < NUMPIXELS; i++)
+    // {
+    //   Serial.print(i);
+    //   Serial.print(": ");
 
-      uint32_t c = pixels.getPixelColor(i);
-      uint8_t r = (uint8_t)(c >> 16);
-      uint8_t g = (uint8_t)(c >> 8);
-      uint8_t b = (uint8_t)c;
-      Serial.print(r);
-      Serial.print(",");
-      Serial.print(g);
-      Serial.print(",");
-      Serial.print(b);
-      Serial.println();
-    }
-    Serial.println();
+    //   uint32_t c = pixels.getPixelColor(i);
+    //   uint8_t r = (uint8_t)(c >> 16);
+    //   uint8_t g = (uint8_t)(c >> 8);
+    //   uint8_t b = (uint8_t)c;
+    //   Serial.print(r);
+    //   Serial.print(",");
+    //   Serial.print(g);
+    //   Serial.print(",");
+    //   Serial.print(b);
+    //   Serial.println();
+    // }
+    // Serial.println();
   }
   iter++;
 }
