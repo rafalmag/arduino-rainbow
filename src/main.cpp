@@ -1,99 +1,102 @@
-#include <Arduino.h>
-#include <Adafruit_NeoPixel.h>
 
-#define NEOPIXEL_PIN 6
+/*
+ * References:
+ * 
+ * http://fastled.io/docs/3.1/group___colorutils.html
+ * https://github.com/FastLED/FastLED/wiki/Pixel-reference#predefined-colors-list
+ *
+ */
 
-// How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS 8
+#include "FastLED.h" // FastLED library.
 
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
-int iter = 0;
+#if FASTLED_VERSION < 3001000
+#error "Requires FastLED 3.1 or later; check github for latest code."
+#endif
+
+// Fixed definitions cannot change on the fly.
+#define DATA_PIN 6
+#define LED_TYPE NEOPIXEL
+#define NUM_LEDS 60
+
+// Global variables can be changed on the fly.
+// Overall brightness definition. It can be changed on the fly.
+uint8_t max_bright = 128;
+
+// Initialize LED array.
+struct CRGB leds[NUM_LEDS];
+
+// Colours defined for below
+long firstval = 0xff00ff;
+CRGB rgbval(50, 0, 500);
+CHSV hsvval(100, 255, 200);
+
+uint8_t startpos = 0;
+int endpos = NUM_LEDS - 1;
 
 void setup()
 {
-  // put your setup code here, to run once:
-  analogReference(INTERNAL); //1.1V
-  pinMode(LED_BUILTIN, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(9600); // Initialize serial port for debugging.
+  delay(1000);        // Soft startup to ease the flow of electrons.
 
-  pixels.begin(); // This initializes the NeoPixel library.
+  LEDS.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
+
+  FastLED.setBrightness(max_bright);
+  set_max_power_in_volts_and_milliamps(5, 5000); // FastLED Power management set at 5V, 500mA.
 }
 
-// r,g,b expected to be in range 0-255
-// perc 0.0-1.0
-void setLeds(int listSize, int r, int g, int b, float perc)
-{
-  if (perc < 0.0001)
-  {
-    // to get rid of div by 0 issues
-    perc = 0.0001;
-  }
+int mode = 0;
 
-  float mid = (listSize - 1) * perc;
-
-  // left
-  float r_a1 = r / mid;
-  float g_a1 = g / mid;
-  float b_a1 = b / mid;
-  for (int i = 0; i <= mid; i++)
-  {
-    int r_val = i * r_a1;
-    int g_val = i * g_a1;
-    int b_val = i * b_a1;
-    pixels.setPixelColor(i, pixels.Color(r_val, g_val, b_val));
-  }
-  //right
-  float divider = (listSize - 1 - mid);
-
-  int r_b2 = 255 - r;
-  int g_b2 = 255 - g;
-  int b_b2 = 255 - b;
-
-  for (int i = mid + 1; i < listSize; i++)
-  {
-    float i_factor = i - mid;
-    int r_val = r_b2 * i_factor / divider + r;
-    int g_val = g_b2 * i_factor / divider + g;
-    int b_val = b_b2 * i_factor / divider + b;
-
-    // vals from range 0-255
-    pixels.setPixelColor(i, pixels.Color(r_val, g_val, b_val));
-  }
-}
+// for rainbow
+uint8_t initialHue = 0;
+// http://www.comfsm.fm/~dleeling/cis/hsl_rainbow.html
+// rainbow is hue from 0 to 270
+// for multiple repeated rainbows 15 was also good.
+uint8_t deltahue = 270 / NUM_LEDS;
 
 void loop()
 {
-  // div by 4 to convert 0-1023 to 0-255
-  int r = analogRead(0) / 4;
-  int g = analogRead(1) / 4;
-  int b = analogRead(2) / 4;
-  // div by 1023 to convert 0-1023 to 0.0-1.0
-  float perc = analogRead(3) / 1023.0;
-
-  setLeds(NUMPIXELS, r, g, b, perc);
-  pixels.show(); // This sends the updated pixel color to the hardware.
-  delay(100);
-
-  if (iter % 15 == 0)
+  switch (mode)
   {
-    iter = 0;
-    // for (int i = 0; i < NUMPIXELS; i++)
-    // {
-    //   Serial.print(i);
-    //   Serial.print(": ");
-
-    //   uint32_t c = pixels.getPixelColor(i);
-    //   uint8_t r = (uint8_t)(c >> 16);
-    //   uint8_t g = (uint8_t)(c >> 8);
-    //   uint8_t b = (uint8_t)c;
-    //   Serial.print(r);
-    //   Serial.print(",");
-    //   Serial.print(g);
-    //   Serial.print(",");
-    //   Serial.print(b);
-    //   Serial.println();
-    // }
-    // Serial.println();
+  case 0:
+    Serial.println("clear");
+    // Clear the strip
+    fill_solid(leds, NUM_LEDS, 0);
+    break;
+  case 1:
+    Serial.println("rainbow");
+    fill_rainbow(leds, NUM_LEDS, initialHue, deltahue);
+    break;
+  default:
+    // will be incremented later to 0
+    mode = -1;
+    break;
   }
-  iter++;
-}
+  FastLED.show(); // Power managed display
+  delay(2000);
+  mode = mode + 1;
+  Serial.println(mode);
+
+  // fill_solid section
+  //  fill_solid(leds,NUM_LEDS, firstval);                        // A 'long' RGB value
+  //  fill_solid(leds, NUM_LEDS, CRGB::HotPink);                  // https://github.com/FastLED/FastLED/wiki/Pixel-reference#predefined-colors-list
+  //  fill_solid(leds, NUM_LEDS, rgbval);                         // 8 bit values inside the colour definition
+  //  fill_solid(leds, NUM_LEDS, hsvval);                         // 8 bit values inside the colour definition
+
+  // fill_solid(leds, 5, rgbval);
+  // fill_solid(leds+5,5, CRGB::Green);
+  // fill_solid(leds+10,5, hsvval);
+
+  // fill_gradient section
+  //  fill_gradient_RGB(leds, startpos, 0x000011, endpos, 0x110000);   // You can mix and match long values and CRGB values. Remember, endpos goes up to NUM_LEDS-1
+  //  fill_gradient_RGB(leds, NUM_LEDS, CRGB(50,0,200), CRGB(80,200,240));  // up to 4 CRGB (or long) values
+
+  //FORWARD_HUES, BACKWARD_HUES, SHORTEST_HUES, LONGEST_HUES
+  //  fill_gradient(leds, startpos, CHSV(50, 255,255) , endpos, CHSV(150,255,255), SHORTEST_HUES);
+  //  fill_gradient(leds, NUM_LEDS, CHSV(50, 255,255), CHSV(100,255,255), LONGEST_HUES);    // up to 4 CHSV values
+
+  // fill_rainbow section
+  //  fill_rainbow(leds, NUM_LEDS, thishue, deltahue);            // Use FastLED's fill_rainbow routine.
+  // fill_solid(leds, NUM_LEDS, 0); // Clear the strip for. . .
+  //  fill_rainbow(leds+1, NUM_LEDS-2, thishue, deltahue);        // One pixel border at each end.
+
+} // loop()
