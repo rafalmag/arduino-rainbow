@@ -42,13 +42,20 @@ CRGBPalette16 black_p(b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b);
 CRGBPalette16 nightPalette(b, b, b, w, b, b, b, w, b, b, b, w, b, b, b, w);
 
 int sin8_delta = 16;
+uint32_t lastChangeMs = GET_MILLIS();
+TBlendType blendType = LINEARBLEND;
 
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette)
 {
-
   for (int i = 0; i < NUM_LEDS; i++)
   {
-    leds[i] = ColorFromPalette(targetPalette, i + sin8(i * sin8_delta), 255);
+    CRGB oldC = leds[i];
+    CRGB newC = ColorFromPalette(targetPalette, i + sin8(i * sin8_delta), 255, blendType);
+    // I could not find a fixed value to get good results,
+    // the night pattern was too colorfull with low values, with high values no blending effect
+    // beat8 - starts from low value in the first iterations,
+    // then increases to high values to fix final effect
+    leds[i] = blend(oldC, newC, beat8(15, lastChangeMs));
   }
 }
 
@@ -67,6 +74,8 @@ void setup()
   set_max_power_in_volts_and_milliamps(5, 5000); // FastLED Power management set at 5V, 5000mA.
 
   analogReference(INTERNAL); //1.1V
+
+  fill_solid(leds, NUM_LEDS, b);
 }
 
 int mode = 0;
@@ -103,6 +112,7 @@ void loop()
       mode++;
       mode = mode % MODES;
     }
+    lastChangeMs = GET_MILLIS();
     // Serial.print(encoder0Pos);
     // Serial.print(",");
   }
@@ -113,32 +123,40 @@ void loop()
   max_bright = analogRead(3) / 4;
   FastLED.setBrightness(max_bright);
 
-  sin8_delta = 16;
   switch (mode)
   {
   case 0:
     // Clear the strip
+    sin8_delta = 16;
+    blendType = NOBLEND;
     targetPalette = black_p;
     break;
   case 1:
+    sin8_delta = 16;
+    blendType = LINEARBLEND;
     targetPalette = CloudColors_p;
     break;
   case 2:
+    sin8_delta = 16;
+    blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     break;
   case 3:
-    sin8_delta = 8;
+    sin8_delta = 5;
+    blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     break;
   case 4:
+    sin8_delta = 16;
+    blendType = NOBLEND;
     targetPalette = nightPalette;
     break;
   default:
     break;
   }
-  int maxChanges = 32;
-  nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
-  fillLedsFromPaletteColors(currentPalette);
+  // int maxChanges = 16;
+  // nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
+  fillLedsFromPaletteColors(targetPalette);
   FastLED.show(); // Power managed display
   // EVERY_N_MILLISECONDS(2000)
   // {
