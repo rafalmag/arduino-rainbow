@@ -39,8 +39,13 @@ int endpos = NUM_LEDS - 1;
 CRGB b = CRGB::Black;
 CRGB w(20, 20, 20);
 CRGBPalette16 black_p(b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b);
+DEFINE_GRADIENT_PALETTE(white_p){
+    0, 255, 255, 255,    // full white
+    255, 255, 255, 255}; // full white
+
 CRGBPalette16 nightPalette(b, b, b, w, b, b, b, w, b, b, b, w, b, b, b, w);
 
+int offset = 0;
 int sin8_delta = 16;
 uint32_t lastChangeMs = GET_MILLIS();
 TBlendType blendType = LINEARBLEND;
@@ -50,7 +55,7 @@ void fillLedsFromPaletteColors(CRGBPalette16 targetPalette)
   for (int i = 0; i < NUM_LEDS; i++)
   {
     CRGB oldC = leds[i];
-    CRGB newC = ColorFromPalette(targetPalette, i + sin8(i * sin8_delta), 255, blendType);
+    CRGB newC = ColorFromPalette(targetPalette, sin8(i * sin8_delta) + offset, 255, blendType);
     // I could not find a fixed value to get good results,
     // the night pattern was too colorfull with low values, with high values no blending effect
     // beat8 - starts from low value in the first iterations,
@@ -79,7 +84,7 @@ void setup()
 }
 
 int mode = 0;
-#define MODES 5 // including 0
+#define MODES 6 // including 0
 
 // for rainbow
 uint8_t initialHue = 0;
@@ -127,30 +132,41 @@ void loop()
   {
   case 0:
     // Clear the strip
-    sin8_delta = 16;
+    offset = 0;
+    sin8_delta = 0;
     blendType = NOBLEND;
     targetPalette = black_p;
     break;
   case 1:
+    offset = beat8(1, lastChangeMs);
     sin8_delta = 16;
     blendType = LINEARBLEND;
     targetPalette = CloudColors_p;
     break;
   case 2:
+    offset = 0;
     sin8_delta = 16;
     blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     break;
   case 3:
+    offset = 0;
     sin8_delta = 5;
     blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     break;
   case 4:
-    sin8_delta = 16;
-    blendType = NOBLEND;
+    // or use 0 to turn off
+    offset = beatsin8(1, 0, 20, lastChangeMs);
+    sin8_delta = 12;
+    blendType = LINEARBLEND; //NOBLEND;
     targetPalette = nightPalette;
     break;
+  case 5:
+    offset = 0;
+    sin8_delta = 0;
+    blendType = NOBLEND;
+    targetPalette = white_p;
   default:
     break;
   }
