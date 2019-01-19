@@ -38,14 +38,17 @@ int endpos = NUM_LEDS - 1;
 
 CRGB b = CRGB::Black;
 CRGB w(20, 20, 20);
+CRGBPalette16 black_p(b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b);
 CRGBPalette16 nightPalette(b, b, b, w, b, b, b, w, b, b, b, w, b, b, b, w);
+
+int sin8_delta = 16;
 
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette)
 {
 
   for (int i = 0; i < NUM_LEDS; i++)
   {
-    leds[i] = ColorFromPalette(targetPalette, i + sin8(i * 16), 255);
+    leds[i] = ColorFromPalette(targetPalette, i + sin8(i * sin8_delta), 255);
   }
 }
 
@@ -76,6 +79,9 @@ uint8_t initialHue = 0;
 // for multiple repeated rainbows 15 was also good.
 uint8_t deltahue = 270 / NUM_LEDS;
 
+CRGBPalette16 currentPalette;
+CRGBPalette16 targetPalette;
+
 void loop()
 {
   //encoder stuff
@@ -86,8 +92,9 @@ void loop()
     {
       encoder0Pos--;
       mode--;
-      if(mode<0){
-        mode = MODES -1;
+      if (mode < 0)
+      {
+        mode = MODES - 1;
       }
     }
     else
@@ -106,31 +113,35 @@ void loop()
   max_bright = analogRead(3) / 4;
   FastLED.setBrightness(max_bright);
 
+  sin8_delta = 16;
   switch (mode)
   {
   case 0:
     // Clear the strip
-    fill_solid(leds, NUM_LEDS, 0);
+    targetPalette = black_p;
     break;
   case 1:
-    fillLedsFromPaletteColors(CloudColors_p);
+    targetPalette = CloudColors_p;
     break;
   case 2:
-    fill_rainbow(leds, NUM_LEDS, initialHue, deltahue);
+    targetPalette = RainbowColors_p;
     break;
   case 3:
-    fill_rainbow(leds, NUM_LEDS, initialHue, 15);
+    sin8_delta = 8;
+    targetPalette = RainbowColors_p;
     break;
   case 4:
-    fillLedsFromPaletteColors(nightPalette);
+    targetPalette = nightPalette;
     break;
   default:
     break;
   }
+  int maxChanges = 32;
+  nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
+  fillLedsFromPaletteColors(currentPalette);
   FastLED.show(); // Power managed display
-  EVERY_N_MILLISECONDS(2000)
-  {
-    mode = mode + 1;
-    Serial.println("mode " + mode);
-  }
+  // EVERY_N_MILLISECONDS(2000)
+  // {
+  //   Serial.println("mode " + mode);
+  // }
 } // loop()
