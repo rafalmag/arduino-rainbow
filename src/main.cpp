@@ -67,6 +67,7 @@ void setup()
 }
 
 int mode = 0;
+#define MODES 5 // including 0
 
 // for rainbow
 uint8_t initialHue = 0;
@@ -84,13 +85,19 @@ void loop()
     if (digitalRead(encoder0PinB) == LOW)
     {
       encoder0Pos--;
+      mode--;
+      if(mode<0){
+        mode = MODES -1;
+      }
     }
     else
     {
       encoder0Pos++;
+      mode++;
+      mode = mode % MODES;
     }
-    Serial.print(encoder0Pos);
-    Serial.print(",");
+    // Serial.print(encoder0Pos);
+    // Serial.print(",");
   }
   encoder0PinALast = n;
 
@@ -102,36 +109,28 @@ void loop()
   switch (mode)
   {
   case 0:
-    // Serial.println("clear");
     // Clear the strip
     fill_solid(leds, NUM_LEDS, 0);
     break;
   case 1:
-    // Serial.println("cloud");
     fillLedsFromPaletteColors(CloudColors_p);
     break;
   case 2:
-    // Serial.println("rainbow");
     fill_rainbow(leds, NUM_LEDS, initialHue, deltahue);
     break;
   case 3:
-    // Serial.println("rainbow2");
     fill_rainbow(leds, NUM_LEDS, initialHue, 15);
     break;
   case 4:
-    // Serial.println("night");
     fillLedsFromPaletteColors(nightPalette);
     break;
   default:
-    // will be incremented later to 0
-    mode = -1;
     break;
   }
   FastLED.show(); // Power managed display
-  // delay(2000);
   EVERY_N_MILLISECONDS(2000)
   {
     mode = mode + 1;
-    Serial.println(mode);
+    Serial.println("mode " + mode);
   }
 } // loop()
