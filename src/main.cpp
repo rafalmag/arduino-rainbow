@@ -36,26 +36,29 @@ struct CRGB leds[NUM_LEDS];
 uint8_t startpos = 0;
 int endpos = NUM_LEDS - 1;
 
-CRGB b = CRGB::Black;
-CRGB w(20, 20, 20);
-CRGBPalette16 black_p(b, b, b, b, b, b, b, b, b, b, b, b, b, b, b, b);
+// palettes
+DEFINE_GRADIENT_PALETTE(black_p){
+    0, 0, 0, 0,    // full black
+    255, 0, 0, 0}; // full black
 DEFINE_GRADIENT_PALETTE(white_p){
     0, 255, 255, 255,    // full white
     255, 255, 255, 255}; // full white
 
-CRGBPalette16 nightPalette(b, b, b, w, b, b, b, w, b, b, b, w, b, b, b, w);
+CRGB b = CRGB::Black;
+CRGB star(20, 20, 20);
+CRGBPalette16 nightPalette(b, b, b, star, b, b, b, star, b, b, b, star, b, b, b, star);
 
-int offset = 0;
-int sin8_delta = 16;
 uint32_t lastChangeMs = GET_MILLIS();
-TBlendType blendType = LINEARBLEND;
 
-void fillLedsFromPaletteColors(CRGBPalette16 targetPalette)
+typedef uint8_t (*indexFunType)(int);
+
+void fillLedsFromPaletteColors(CRGBPalette16 targetPalette, indexFunType indexFun, TBlendType blendType)
 {
   for (int i = 0; i < NUM_LEDS; i++)
   {
     CRGB oldC = leds[i];
-    CRGB newC = ColorFromPalette(targetPalette, sin8(i * sin8_delta) + offset, 255, blendType);
+    // sin8(i * sin8_delta) + offset
+    CRGB newC = ColorFromPalette(targetPalette, indexFun(i), 255, blendType);
     // I could not find a fixed value to get good results,
     // the night pattern was too colorfull with low values, with high values no blending effect
     // beat8 - starts from low value in the first iterations,
@@ -76,7 +79,7 @@ void setup()
   LEDS.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
 
   FastLED.setBrightness(max_bright);
-  set_max_power_in_volts_and_milliamps(5, 5000); // FastLED Power management set at 5V, 5000mA.
+  set_max_power_in_volts_and_milliamps(5, 4500); // FastLED Power management set at 5V, 4500mA.
 
   analogReference(INTERNAL); //1.1V
 
@@ -128,51 +131,49 @@ void loop()
   max_bright = analogRead(3) / 4;
   FastLED.setBrightness(max_bright);
 
+  indexFunType indexFun;
+  TBlendType blendType;
   switch (mode)
   {
   case 0:
     // Clear the strip
-    offset = 0;
-    sin8_delta = 0;
     blendType = NOBLEND;
     targetPalette = black_p;
+    indexFun = [](int i) { return (uint8_t)1; };
     break;
   case 1:
-    offset = beat8(1, lastChangeMs);
-    sin8_delta = 16;
     blendType = LINEARBLEND;
     targetPalette = CloudColors_p;
+    indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
   case 2:
-    offset = 0;
-    sin8_delta = 16;
     blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
+    indexFun = [](int i) { return sin8(i * 16); };
     break;
   case 3:
-    offset = 0;
-    sin8_delta = 5;
     blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
+    indexFun = [](int i) { return sin8(i * 5); };
     break;
   case 4:
-    // or use 0 to turn off
-    offset = beatsin8(1, 0, 20, lastChangeMs);
-    sin8_delta = 12;
     blendType = LINEARBLEND; //NOBLEND;
     targetPalette = nightPalette;
+    indexFun = [](int i) {
+      // or use 0 offset to turn off animation
+      return (uint8_t)(sin8(i * 16) + beatsin8(1, 0, 20));
+    };
     break;
   case 5:
-    offset = 0;
-    sin8_delta = 0;
     blendType = NOBLEND;
     targetPalette = white_p;
+    indexFun = [](int i) { return (uint8_t)1; };
   default:
     break;
   }
   // int maxChanges = 16;
   // nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
-  fillLedsFromPaletteColors(targetPalette);
+  fillLedsFromPaletteColors(targetPalette, indexFun, blendType);
   FastLED.show(); // Power managed display
   // EVERY_N_MILLISECONDS(2000)
   // {
