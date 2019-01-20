@@ -44,11 +44,20 @@ DEFINE_GRADIENT_PALETTE(white_p){
     0, 255, 255, 255,    // full white
     255, 255, 255, 255}; // full white
 
+DEFINE_GRADIENT_PALETTE(morning1_p){
+    0, 255, 0, 0,      // red
+    255, 255, 255, 0}; // yellow
+CRGBPalette16 myMorning1_p = morning1_p;
+DEFINE_GRADIENT_PALETTE(morning2_p){
+    0, 255, 0, 0,    // red
+    255, 0, 0, 255}; // blue
+CRGBPalette16 myMorning2_p = morning2_p;
+
 CRGB b = CRGB::Black;
 CRGB star(20, 20, 20);
 CRGBPalette16 nightPalette(b, b, b, star, b, b, b, star, b, b, b, star, b, b, b, star);
 
-uint32_t lastChangeMs = GET_MILLIS();
+unsigned long lastChangeMs = millis();
 
 typedef uint8_t (*indexFunType)(int);
 
@@ -87,7 +96,7 @@ void setup()
 }
 
 int mode = 0;
-#define MODES 6 // including 0
+#define MODES 7 // including 0
 
 // for rainbow
 uint8_t initialHue = 0;
@@ -120,7 +129,7 @@ void loop()
       mode++;
       mode = mode % MODES;
     }
-    lastChangeMs = GET_MILLIS();
+    lastChangeMs = millis();
     // Serial.print(encoder0Pos);
     // Serial.print(",");
   }
@@ -143,20 +152,32 @@ void loop()
     break;
   case 1:
     blendType = LINEARBLEND;
-    targetPalette = CloudColors_p;
-    indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
+    if (millis() - lastChangeMs <= 100)
+    {
+      targetPalette = myMorning1_p;
+    }
+    else
+    {
+      nblendPaletteTowardPalette(targetPalette, myMorning2_p, 2);
+    }
+    indexFun = [](int i) { return (uint8_t)map(i, 0, NUM_LEDS - 1, 0, 254); };
     break;
   case 2:
     blendType = LINEARBLEND;
-    targetPalette = RainbowColors_p;
-    indexFun = [](int i) { return sin8(i * 16); };
+    targetPalette = CloudColors_p;
+    indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
   case 3:
     blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
-    indexFun = [](int i) { return sin8(i * 5); };
+    indexFun = [](int i) { return sin8(i * 16); };
     break;
   case 4:
+    blendType = LINEARBLEND;
+    targetPalette = RainbowColors_p;
+    indexFun = [](int i) { return sin8(i * 5); };
+    break;
+  case 5:
     blendType = LINEARBLEND; //NOBLEND;
     targetPalette = nightPalette;
     indexFun = [](int i) {
@@ -164,7 +185,7 @@ void loop()
       return (uint8_t)(sin8(i * 16) + beatsin8(1, 0, 20));
     };
     break;
-  case 5:
+  case 6:
     blendType = NOBLEND;
     targetPalette = white_p;
     indexFun = [](int i) { return (uint8_t)1; };
