@@ -190,16 +190,19 @@ uint8_t reverseLinearIndexShiftedMidpoint(int i)
 
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette, indexFunType indexFun, TBlendType blendType)
 {
-  for (int i = 0; i < NUM_LEDS; i++)
+  EVERY_N_MILLISECONDS(33)
   {
-    CRGB oldC = leds[i];
-    // sin8(i * sin8_delta) + offset
-    CRGB newC = ColorFromPalette(targetPalette, indexFun(i), 255, blendType);
-    // I could not find a fixed value to get good results,
-    // the night pattern was too colorfull with low values, with high values no blending effect
-    // beat8 - starts from low value in the first iterations,
-    // then increases to high values to fix final effect
-    leds[i] = blend(oldC, newC, beat8(15, lastChangeMs));
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+      CRGB oldC = leds[i];
+      // sin8(i * sin8_delta) + offset
+      CRGB newC = ColorFromPalette(targetPalette, indexFun(i), 255, blendType);
+      // I could not find a fixed value to get good results,
+      // the night pattern was too colorfull with low values, with high values no blending effect
+      // beat8 - starts from low value in the first iterations,
+      // then increases to high values to fix final effect
+      leds[i] = blend(oldC, newC, beat8(5, lastChangeMs));
+    }
   }
 }
 
