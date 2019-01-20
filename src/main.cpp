@@ -130,10 +130,11 @@ CRGBPalette16 sky_p = sky_gp;
   background: -webkit-linear-gradient(bottom, rgba(57,167,255,1) 0%, rgba(13,98,245,1) 20%,rgba(0,11,22,0.1) 60%);
   opacity: 0;
 */
+// reduced brightness by roughly 65%
 DEFINE_GRADIENT_PALETTE(horizonNight_gp){
-    0, 57, 167, 255,
-    51, 13, 98, 245, // 20%
-    153, 0, 11, 22,  // 60%
+    0, 37, 108, 165, // 0%
+    51, 8, 66, 166, // 20%
+    153, 0, 9, 18,  // 60%
     255, 0, 0, 0};
 CRGBPalette16 horizonNight_p = horizonNight_gp;
 
