@@ -142,19 +142,50 @@ unsigned long lastChangeMs = millis();
 
 typedef uint8_t (*indexFunType)(int);
 
-uint8_t linearIndex(int i)
-{
-  return map(i, 0, NUM_LEDS, 0, 254);
-}
-
 uint8_t firstFromPaletteIndex(int i)
 {
   return 1;
 }
 
+uint8_t linearIndex(int i)
+{
+  return map(i, 0, NUM_LEDS, 0, 254);
+}
+
 uint8_t reverseLinearIndex(int i)
 {
   return map(i, 0, NUM_LEDS, 254, 0);
+}
+
+// from range 0-255
+#define MID_POINT 42
+
+uint8_t linearIndexShiftedMidpointCalc(uint8_t x)
+{
+  /* function characteristic:
+  (0,positive) , eg. for MID_POINT=42 => (0,50)
+  (MID_POINT,0)
+  (255,255)
+  demo: https://docs.google.com/spreadsheets/d/1HTOywyhYfUQjNWwb3yhnUsYyn21_lV1Gsr04tXXGE3Y
+  */
+  if (x < MID_POINT)
+  {
+    return (uint8_t)(-255.0 / (255.0 - MID_POINT) * x + (255.0 * MID_POINT) / (255.0 - MID_POINT));
+  }
+  else
+  {
+    return (uint8_t)(255.0 / (255.0 - MID_POINT) * x - (255.0 * MID_POINT) / (255.0 - MID_POINT));
+  }
+}
+
+uint8_t linearIndexShiftedMidpoint(int i)
+{
+  return linearIndexShiftedMidpointCalc(linearIndex(i));
+}
+
+uint8_t reverseLinearIndexShiftedMidpoint(int i)
+{
+  return linearIndexShiftedMidpointCalc(reverseLinearIndex(i));
 }
 
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette, indexFunType indexFun, TBlendType blendType)
@@ -249,13 +280,13 @@ void loop()
   case 1:
     blendType = NOBLEND;
     targetPalette = horizonNight_p;
-    indexFun = &linearIndex;
+    indexFun = &linearIndexShiftedMidpoint;
     break;
   case 2:
     // sunrise
     blendType = NOBLEND;
     targetPalette = sunSet_p;
-    indexFun = &linearIndex;
+    indexFun = &linearIndexShiftedMidpoint;
     break;
   case 3:
     targetPalette = CloudColors_p;
@@ -277,12 +308,12 @@ void loop()
     // sunset
     blendType = NOBLEND;
     targetPalette = sunSet_p;
-    indexFun = &reverseLinearIndex;
+    indexFun = &reverseLinearIndexShiftedMidpoint;
     break;
   case 8:
     blendType = NOBLEND;
     targetPalette = horizonNight_p;
-    indexFun = &reverseLinearIndex;
+    indexFun = &reverseLinearIndexShiftedMidpoint;
     break;
   case 9:
     // night sky with stars
