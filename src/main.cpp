@@ -61,7 +61,7 @@ CRGB b = CRGB::Black;
 CRGB star(20, 20, 20);
 CRGBPalette16 nightPalette(b, b, b, star, b, b, b, star, b, b, b, star, b, b, b, star);
 
-// below palletes based on 
+// below palletes based on
 /*
 #sun {
   background: -webkit-radial-gradient(bottom, circle, rgba(242,248,247,1) 0%,rgba(249,249,28,1) 3%,rgba(247,214,46,1) 8%, rgba(248,200,95,1) 12%,rgba(201,165,132,1) 30%,rgba(115,130,133,1) 51%,rgba(46,97,122,1) 85%,rgba(24,75,106,1) 100%);
@@ -133,14 +133,24 @@ CRGBPalette16 sky_p = sky_gp;
 // reduced brightness by roughly 65%
 DEFINE_GRADIENT_PALETTE(horizonNight_gp){
     0, 37, 108, 165, // 0%
-    51, 8, 66, 166, // 20%
-    153, 0, 9, 18,  // 60%
+    51, 8, 66, 166,  // 20%
+    153, 0, 9, 18,   // 60%
     255, 0, 0, 0};
 CRGBPalette16 horizonNight_p = horizonNight_gp;
 
 unsigned long lastChangeMs = millis();
 
 typedef uint8_t (*indexFunType)(int);
+
+uint8_t linearIndex(int i)
+{
+  return map(i, 0, NUM_LEDS, 0, 254);
+}
+
+uint8_t firstFromPaletteIndex(int i)
+{
+  return 1;
+}
 
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette, indexFunType indexFun, TBlendType blendType)
 {
@@ -222,18 +232,17 @@ void loop()
   FastLED.setBrightness(max_bright);
 
   indexFunType indexFun;
-  TBlendType blendType;
+  TBlendType blendType = LINEARBLEND;
   switch (mode)
   {
   case 0:
     // Clear the strip
     blendType = NOBLEND;
     targetPalette = black_p;
-    indexFun = [](int i) { return (uint8_t)1; };
+    indexFun = &firstFromPaletteIndex;
     break;
   case 1:
     // sunrise
-    blendType = LINEARBLEND;
     if (millis() - lastChangeMs <= 100)
     {
       targetPalette = horizonNight_p;
@@ -242,25 +251,21 @@ void loop()
     {
       nblendPaletteTowardPalette(targetPalette, sunSet_p, 2);
     }
-    indexFun = [](int i) { return (uint8_t)map(i, 0, NUM_LEDS, 0, 254); };
+    indexFun = &linearIndex;
     break;
   case 2:
-    blendType = LINEARBLEND;
     targetPalette = CloudColors_p;
     indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
   case 3:
-    blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     indexFun = [](int i) { return sin8(i * 16); };
     break;
   case 4:
-    blendType = LINEARBLEND;
     targetPalette = RainbowColors_p;
     indexFun = [](int i) { return sin8(i * 5); };
     break;
   case 5:
-    blendType = LINEARBLEND;
     if (millis() - lastChangeMs <= 100)
     {
       targetPalette = sky_p;
@@ -269,10 +274,9 @@ void loop()
     {
       nblendPaletteTowardPalette(targetPalette, sunSet_p, 2);
     }
-    indexFun = [](int i) { return (uint8_t)map(i, 0, NUM_LEDS, 0, 254); };
+    indexFun = &linearIndex;
     break;
   case 6:
-    blendType = LINEARBLEND;
     if (millis() - lastChangeMs <= 100)
     {
       targetPalette = sunSet_p;
@@ -281,9 +285,10 @@ void loop()
     {
       nblendPaletteTowardPalette(targetPalette, horizonNight_p, 2);
     }
-    indexFun = [](int i) { return (uint8_t)map(i, 0, NUM_LEDS, 0, 254); };
+    indexFun = &linearIndex;
     break;
   case 7:
+    // night sky with stars
     blendType = LINEARBLEND; //NOBLEND;
     targetPalette = nightPalette;
     indexFun = [](int i) {
@@ -294,12 +299,11 @@ void loop()
   case 8:
     blendType = NOBLEND;
     targetPalette = white_p;
-    indexFun = [](int i) { return (uint8_t)1; };
+    indexFun = &firstFromPaletteIndex;
   default:
     break;
   }
   // int maxChanges = 16;
-  // nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
   fillLedsFromPaletteColors(targetPalette, indexFun, blendType);
   FastLED.show(); // Power managed display
   // EVERY_N_MILLISECONDS(2000)
