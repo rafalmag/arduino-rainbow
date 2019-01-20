@@ -152,6 +152,11 @@ uint8_t firstFromPaletteIndex(int i)
   return 1;
 }
 
+uint8_t reverseLinearIndex(int i)
+{
+  return map(i, 0, NUM_LEDS, 254, 0);
+}
+
 void fillLedsFromPaletteColors(CRGBPalette16 targetPalette, indexFunType indexFun, TBlendType blendType)
 {
   for (int i = 0; i < NUM_LEDS; i++)
@@ -242,11 +247,13 @@ void loop()
     indexFun = &firstFromPaletteIndex;
     break;
   case 1:
+    blendType = NOBLEND;
     targetPalette = horizonNight_p;
     indexFun = &linearIndex;
     break;
   case 2:
     // sunrise
+    blendType = NOBLEND;
     targetPalette = sunSet_p;
     indexFun = &linearIndex;
     break;
@@ -256,23 +263,26 @@ void loop()
     break;
   case 4:
     targetPalette = RainbowColors_p;
-    indexFun = [](int i) { return sin8(i * 16); };
+    indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
   case 5:
     targetPalette = RainbowColors_p;
-    indexFun = [](int i) { return sin8(i * 5); };
+    indexFun = [](int i) { return (uint8_t)(sin8(i * 5) + beat8(1)); };
     break;
   case 6:
-      targetPalette = sky_p;
-    indexFun = &linearIndex;
+    targetPalette = CloudColors_p;
+    indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
   case 7:
+    // sunset
+    blendType = NOBLEND;
     targetPalette = sunSet_p;
-    indexFun = &linearIndex;
+    indexFun = &reverseLinearIndex;
     break;
   case 8:
+    blendType = NOBLEND;
     targetPalette = horizonNight_p;
-    indexFun = &linearIndex;
+    indexFun = &reverseLinearIndex;
     break;
   case 9:
     // night sky with stars
