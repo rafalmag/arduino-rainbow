@@ -187,7 +187,7 @@ void setup()
 }
 
 int mode = 0;
-#define MODES 9 // including 0
+#define MODES 11 // including 0
 
 // for rainbow
 uint8_t initialHue = 0;
@@ -242,52 +242,39 @@ void loop()
     indexFun = &firstFromPaletteIndex;
     break;
   case 1:
-    // sunrise
-    if (millis() - lastChangeMs <= 100)
-    {
-      targetPalette = horizonNight_p;
-    }
-    else
-    {
-      nblendPaletteTowardPalette(targetPalette, sunSet_p, 2);
-    }
+    targetPalette = horizonNight_p;
     indexFun = &linearIndex;
     break;
   case 2:
+    // sunrise
+    targetPalette = sunSet_p;
+    indexFun = &linearIndex;
+    break;
+  case 3:
     targetPalette = CloudColors_p;
     indexFun = [](int i) { return (uint8_t)(sin8(i * 16) + beat8(1)); };
     break;
-  case 3:
+  case 4:
     targetPalette = RainbowColors_p;
     indexFun = [](int i) { return sin8(i * 16); };
     break;
-  case 4:
+  case 5:
     targetPalette = RainbowColors_p;
     indexFun = [](int i) { return sin8(i * 5); };
     break;
-  case 5:
-    if (millis() - lastChangeMs <= 100)
-    {
-      targetPalette = sky_p;
-    }
-    else
-    {
-      nblendPaletteTowardPalette(targetPalette, sunSet_p, 2);
-    }
-    indexFun = &linearIndex;
-    break;
   case 6:
-    if (millis() - lastChangeMs <= 100)
-    {
-      targetPalette = sunSet_p;
-    }
-    else
-    {
-      nblendPaletteTowardPalette(targetPalette, horizonNight_p, 2);
-    }
+      targetPalette = sky_p;
     indexFun = &linearIndex;
     break;
   case 7:
+    targetPalette = sunSet_p;
+    indexFun = &linearIndex;
+    break;
+  case 8:
+    targetPalette = horizonNight_p;
+    indexFun = &linearIndex;
+    break;
+  case 9:
     // night sky with stars
     blendType = LINEARBLEND; //NOBLEND;
     targetPalette = nightPalette;
@@ -296,14 +283,13 @@ void loop()
       return (uint8_t)(sin8(i * 16) + beatsin8(1, 0, 20));
     };
     break;
-  case 8:
+  case 10:
     blendType = NOBLEND;
     targetPalette = white_p;
     indexFun = &firstFromPaletteIndex;
   default:
     break;
   }
-  // int maxChanges = 16;
   fillLedsFromPaletteColors(targetPalette, indexFun, blendType);
   FastLED.show(); // Power managed display
   // EVERY_N_MILLISECONDS(2000)
