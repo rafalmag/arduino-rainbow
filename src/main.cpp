@@ -25,11 +25,10 @@ uint8_t startpos = 0;
 int endpos = NUM_LEDS - 1;
 
 // encoder
-#define encoder0PinA 9
-#define encoder0PinB 10
+#include <Rotary.h>
+// pin 10 and 9
+Rotary rotary = Rotary(10, 9);
 #define encoder0Button 11
-
-int encoder0PinALast = HIGH;
 
 #define BRIGHTNESS_STEPS 26
 // init value
@@ -47,8 +46,7 @@ void setup()
   Serial.begin(9600); // Initialize serial port for debugging.
   delay(1000);        // Soft startup to ease the flow of electrons.
 
-  pinMode(encoder0PinA, INPUT_PULLUP);
-  pinMode(encoder0PinB, INPUT_PULLUP);
+  rotary.begin(true);
   pinMode(encoder0Button, INPUT_PULLUP);
 
   LEDS.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
@@ -93,10 +91,10 @@ void brightInc()
 
 void checkEncoder()
 {
-  int encoder0PinACurrent = digitalRead(encoder0PinA);
-  if ((encoder0PinALast == LOW) && (encoder0PinACurrent == HIGH))
+  unsigned char encoderResult = rotary.process();
+  if (encoderResult)
   {
-    if (digitalRead(encoder0PinB) == LOW)
+    if (encoderResult == DIR_CCW)
     {
       if (digitalRead(encoder0Button) == LOW)
         modeDec();
@@ -112,7 +110,6 @@ void checkEncoder()
     }
     lastChangeMs = millis();
   }
-  encoder0PinALast = encoder0PinACurrent;
 }
 
 void checkBrightness()
