@@ -24,7 +24,7 @@ struct CRGB leds[NUM_LEDS];
 uint8_t startpos = 0;
 int endpos = NUM_LEDS - 1;
 
-// encoder
+// encoder https://github.com/brianlow/Rotary/blob/master/examples/Polling/Polling.ino
 #include <Rotary.h>
 // pin 10 and 9
 Rotary rotary = Rotary(10, 9);
