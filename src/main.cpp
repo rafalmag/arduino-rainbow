@@ -16,7 +16,7 @@
 // Fixed definitions cannot change on the fly.
 #define DATA_PIN 6
 #define LED_TYPE NEOPIXEL
-#define NUM_LEDS 60
+#define NUM_LEDS 48
 
 // Initialize LED array.
 struct CRGB leds[NUM_LEDS];
@@ -29,13 +29,13 @@ int endpos = NUM_LEDS - 1;
 #define encoder0PinB 10
 #define encoder0Button 11
 
-int encoder0Pos = 0;
-int encoder0PinALast = LOW;
-int n = LOW;
+int encoder0PinALast = HIGH;
 
-// other Global variables can be changed on the fly.
-// Overall brightness definition. It can be changed on the fly.
-uint8_t max_bright = 128;
+#define BRIGHTNESS_STEPS 26
+// init value
+int brightness_mode = 19;
+uint8_t brightnesses[] = {2, 3, 4, 5, 6, 7, 9, 11, 13, 16, 19, 23, 28, 34, 41, 50, 60, 73, 88, 107, 129, 156, 189, 229, 237, 255};
+
 unsigned long lastChangeMs = millis();
 
 // declared here as relies on leds, NUM_LEDS, lastChangeMs
@@ -53,7 +53,7 @@ void setup()
 
   LEDS.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
 
-  FastLED.setBrightness(max_bright);
+  FastLED.setBrightness(brightnesses[brightness_mode]);
   set_max_power_in_volts_and_milliamps(5, 4500); // FastLED Power management set at 5V, 4500mA.
 
   analogReference(INTERNAL); //1.1V
@@ -66,46 +66,65 @@ int mode = 0;
 
 CRGBPalette16 targetPalette;
 
+void modeDec()
+{
+  mode--;
+  if (mode < 0)
+    mode = MODES - 1;
+}
+
+void modeInc()
+{
+  mode++;
+  mode = mode % MODES;
+}
+
+void brightDec()
+{
+  if (brightness_mode != 0)
+    brightness_mode--;
+}
+
+void brightInc()
+{
+  if (brightness_mode < BRIGHTNESS_STEPS - 1)
+    brightness_mode++;
+}
+
 void checkEncoder()
 {
-  n = digitalRead(encoder0PinA);
-  if ((encoder0PinALast == LOW) && (n == HIGH))
+  int encoder0PinACurrent = digitalRead(encoder0PinA);
+  if ((encoder0PinALast == LOW) && (encoder0PinACurrent == HIGH))
   {
     if (digitalRead(encoder0PinB) == LOW)
     {
-      encoder0Pos--;
-      mode--;
-      if (mode < 0)
-      {
-        mode = MODES - 1;
-      }
+      if (digitalRead(encoder0Button) == LOW)
+        modeDec();
+      else
+        brightDec();
     }
     else
     {
-      encoder0Pos++;
-      mode++;
-      mode = mode % MODES;
+      if (digitalRead(encoder0Button) == LOW)
+        modeInc();
+      else
+        brightInc();
     }
     lastChangeMs = millis();
-    // Serial.print(encoder0Pos);
-    // Serial.print(",");
   }
-  encoder0PinALast = n;
+  encoder0PinALast = encoder0PinACurrent;
 }
 
 void checkBrightness()
 {
   // brightness
   // div by 4 to convert 0-1023 to 0-255
-  max_bright = analogRead(3) / 4;
-  FastLED.setBrightness(max_bright);
+  // brightness = analogRead(3) / 4;
+  FastLED.setBrightness(brightnesses[brightness_mode]);
 }
 
-void loop()
+void chooseModeAndFillLedsFromPaletteColors()
 {
-  checkEncoder();
-  checkBrightness();
-
   indexFunType indexFun;
   TBlendType blendType = LINEARBLEND;
   switch (mode)
@@ -171,5 +190,13 @@ void loop()
     break;
   }
   fillLedsFromPaletteColors(targetPalette, indexFun, blendType);
+}
+
+void loop()
+{
+  checkEncoder();
+  checkBrightness();
+  chooseModeAndFillLedsFromPaletteColors();
+
   FastLED.show(); // Power managed display
-} // loop()
+}
