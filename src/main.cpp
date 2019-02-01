@@ -16,7 +16,9 @@
 // Fixed definitions cannot change on the fly.
 #define DATA_PIN 6
 #define LED_TYPE NEOPIXEL
-#define NUM_LEDS 48
+
+// set up for my daughter: Inga
+#define NUM_LEDS (47+73)
 
 // Initialize LED array.
 struct CRGB leds[NUM_LEDS];
